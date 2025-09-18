@@ -170,7 +170,7 @@ ALTER TABLE classroom ADD CONSTRAINT uq_classroom UNIQUE(building, room_number);
 
 ALTER TABLE session RENAME TO lesson;
 
--- 3. INSERT ТЕСТОВЫЕ ДАННЫЕ
+-- INSERT ТЕСТОВЫЕ ДАННЫЕ
 
 INSERT INTO role (code, name, status) VALUES
                                           ('student', 'Студент', 'active'),
