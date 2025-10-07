@@ -54,3 +54,7 @@ ALTER TABLE discipline ADD COLUMN flow_id BIGINT REFERENCES flow(id) ON DELETE S
 ALTER TABLE assignment DROP CONSTRAINT IF EXISTS assignment_flow_id_fkey;
 ALTER TABLE assignment ADD COLUMN discipline_id BIGINT REFERENCES discipline(id) ON DELETE CASCADE;
 ALTER TABLE assignment DROP COLUMN flow_id;
+
+ALTER TABLE exam DROP CONSTRAINT IF EXISTS exam_flow_id_fkey;
+ALTER TABLE exam ADD COLUMN discipline_id BIGINT REFERENCES discipline(id) ON DELETE CASCADE;
+ALTER TABLE exam DROP COLUMN flow_id;
