@@ -16,3 +16,4 @@
 ## Дополнительные правки
 1. Заменить внешний ключ `unit_id` в `discipline` на `flow_id`
 2. Заменить внешний ключ `flow_id` в `assignment` на `discipline_id`
+3. Заменить внешний ключ `flow_id` в `exam` на `discipline_id`
