@@ -36,7 +36,8 @@ ORDER BY u.full_name, f.code;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101059.png]]
+РЕЗУЛЬТАТ — <img width="700" height="157" alt="image" src="https://github.com/user-attachments/assets/b7b14db5-5123-4304-8d87-c468f96935b2" />
+
 
   
 
@@ -76,10 +77,8 @@ ORDER BY ex.scheduled_start NULLS LAST;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101110.png]]
+РЕЗУЛЬТАТ — <img width="770" height="122" alt="image" src="https://github.com/user-attachments/assets/bae6b9f6-c825-4dd5-bfab-14ee2b60b5be" />
 
-  
-  
 
 ---
 
@@ -115,9 +114,8 @@ ORDER BY u.full_name, d.code;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101121.png]]
+РЕЗУЛЬТАТ — <img width="727" height="153" alt="image" src="https://github.com/user-attachments/assets/5ffbce90-7d2d-473b-8ea6-9bf9d3d19c67" />
 
-  
 
 ### 2.2 INNER JOIN — вариант B: задания по потокам (есть только где есть задания)
 
@@ -141,9 +139,7 @@ ORDER BY assignments_count DESC, f.code;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101135.png]]
-
-  
+РЕЗУЛЬТАТ — <img width="530" height="98" alt="image" src="https://github.com/user-attachments/assets/693a24a8-0c0f-46c1-8e59-16b995082848" />
   
 
 ### 2.3 LEFT JOIN — вариант A: все пользователи с их ролью
@@ -168,9 +164,8 @@ ORDER BY u.full_name;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101146.png]]
+РЕЗУЛЬТАТ — <img width="618" height="262" alt="image" src="https://github.com/user-attachments/assets/94cba864-8ad6-474e-9971-f685177ab012" />
 
-  
 
 ### 2.4 LEFT JOIN — вариант B: все потоки и количество студентов (0 допускается)
 
@@ -196,10 +191,8 @@ ORDER BY students_count DESC, f.code;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101208.png]]
+РЕЗУЛЬТАТ — <img width="600" height="164" alt="image" src="https://github.com/user-attachments/assets/5af20dc3-32b9-4e7d-b9a7-c7bf91d2100f" />
 
-  
-  
 
 ### 2.5 RIGHT JOIN — вариант A: показать все потоки, даже без студентов
 
@@ -221,9 +214,8 @@ ORDER BY f.code;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101222.png]]
+РЕЗУЛЬТАТ — <img width="348" height="160" alt="image" src="https://github.com/user-attachments/assets/191cd246-5860-42ef-b285-18b002b3cafd" />
 
-  
 
 ### 2.6 RIGHT JOIN — вариант B: показать все роли, даже если ни одному пользователю не назначено
 
@@ -247,10 +239,8 @@ ORDER BY r.code;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101233.png]]
+РЕЗУЛЬТАТ — <img width="509" height="135" alt="image" src="https://github.com/user-attachments/assets/0ee6dd77-22be-404e-8a52-af9c48826304" />
 
-  
-  
 
 ### 2.7 CROSS JOIN — вариант A: декартово произведение «роль × статус пользователя»
 
@@ -276,9 +266,8 @@ ORDER BY r.code, s.status;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101246.png]]
+РЕЗУЛЬТАТ — <img width="549" height="124" alt="image" src="https://github.com/user-attachments/assets/043be849-cdb8-48df-9adb-6edcf2b015e4" />
 
-  
 
 ### 2.8 CROSS JOIN — вариант B: «типы занятий × дни недели» (полезно для отчёта-шаблона)
 
@@ -306,10 +295,8 @@ ORDER BY lt.ltype, d.day_short;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101305.png]]
+РЕЗУЛЬТАТ — <img width="207" height="625" alt="image" src="https://github.com/user-attachments/assets/ab414f93-bf11-49cb-8edf-79325cbe50d7" />
 
-  
-  
 
 ### 2.9 FULL OUTER JOIN — вариант A: аудитории и факты использования занятиями
 
@@ -335,9 +322,8 @@ ORDER BY c.building NULLS FIRST, c.room_number NULLS FIRST, l.start_at NULLS LAS
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101316.png]]
+РЕЗУЛЬТАТ — <img width="770" height="130" alt="image" src="https://github.com/user-attachments/assets/907f4543-177c-41f0-90e8-2e0e2f6bd67f" />
 
-  
 
 ### 2.10 FULL OUTER JOIN — вариант B: экзамены и прокторы (покажем всё с обеих сторон)
 
@@ -363,4 +349,4 @@ ORDER BY ex.scheduled_start NULLS LAST, proctor_name NULLS LAST;
 
 ```
 
-РЕЗУЛЬТАТ — ![[Pasted image 20251015101325.png]]
+РЕЗУЛЬТАТ — <img width="765" height="295" alt="image" src="https://github.com/user-attachments/assets/7b94a4a3-33eb-4a6f-a23d-bb3607e5095b" />
