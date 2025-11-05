@@ -309,7 +309,7 @@ WHERE u.id IN (
 ORDER BY u.full_name;
 ```
 
-### 6.2 Дисциплины, у которых есть экзамены в следующем месяце
+### 6.2 Дисциплины, у которых есть экзамены в будущем (после текущей даты)
 ```sql
 SELECT 
     d.id,
@@ -319,8 +319,7 @@ FROM discipline d
 WHERE d.id IN (
     SELECT DISTINCT discipline_id
     FROM exam
-    WHERE EXTRACT(YEAR FROM scheduled_start) = EXTRACT(YEAR FROM CURRENT_DATE + INTERVAL '1 month')
-    AND EXTRACT(MONTH FROM scheduled_start) = EXTRACT(MONTH FROM CURRENT_DATE + INTERVAL '1 month')
+    WHERE scheduled_start > CURRENT_DATE
     AND discipline_id IS NOT NULL
 )
 ORDER BY d.code;
@@ -390,7 +389,7 @@ FROM flow f
 WHERE f.start_date < ANY (
     SELECT start_date
     FROM flow f2
-    WHERE f2.unit_id = 2
+    WHERE f2.unit_id = (SELECT id FROM unit WHERE code = 'IGH')
     AND f2.start_date IS NOT NULL
 )
 AND f.start_date IS NOT NULL
@@ -469,9 +468,9 @@ WHERE (ur1.role_id, u1.unit_id) IN (
     SELECT ur2.role_id, u2.unit_id
     FROM "user" u2
     JOIN user_role ur2 ON u2.id = ur2.user_id
-    WHERE u2.id = 1
+    WHERE u2.email = 'ivanov@student.university.edu'
 )
-AND u1.id != 1
+AND u1.email != 'ivanov@student.university.edu'
 ORDER BY u1.full_name;
 ```
 
@@ -621,4 +620,3 @@ SELECT
 FROM lesson l
 ORDER BY l.start_at NULLS LAST;
 ```
-

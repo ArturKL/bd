@@ -1,20 +1,3 @@
--- ============================================
--- СОЗДАНИЕ ТАБЛИЦ БАЗЫ ДАННЫХ UNIVERSITY
--- ============================================
--- Этот файл создает полную структуру БД с учетом всех нормализаций
--- 
--- ИСПОЛЬЗОВАНИЕ В PGADMIN:
--- 
--- 1. Убедитесь, что база данных university уже создана (используйте init_database.sql)
--- 2. Подключитесь к базе university
--- 3. Откройте Query Tool
--- 4. Выполните этот файл (F5 или Execute)
-
--- ============================================
--- СОЗДАНИЕ СПРАВОЧНИКОВ И БАЗОВЫХ ТАБЛИЦ
--- ============================================
-
--- Таблица ролей
 CREATE TABLE role (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
@@ -25,8 +8,6 @@ CREATE TABLE role (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Таблица подразделений (институты/факультеты/кафедры)
 CREATE TABLE unit (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -39,8 +20,6 @@ CREATE TABLE unit (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Таблица пользователей
 CREATE TABLE "user" (
     id BIGSERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
@@ -54,8 +33,6 @@ CREATE TABLE "user" (
     updated_at TIMESTAMPTZ DEFAULT now(),
     last_login_at TIMESTAMPTZ
 );
-
--- Таблица потоков
 CREATE TABLE flow (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
@@ -77,8 +54,6 @@ CREATE TABLE flow (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Таблица дисциплин
 CREATE TABLE discipline (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
@@ -93,8 +68,6 @@ CREATE TABLE discipline (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Таблица аудиторий
 CREATE TABLE classroom (
     id BIGSERIAL PRIMARY KEY,
     building VARCHAR(100),
@@ -109,8 +82,6 @@ CREATE TABLE classroom (
     updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT uq_classroom UNIQUE(building, room_number)
 );
-
--- Таблица занятий
 CREATE TABLE lesson (
     id BIGSERIAL PRIMARY KEY,
     flow_id BIGINT REFERENCES flow(id),
@@ -125,20 +96,14 @@ CREATE TABLE lesson (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Справочник статусов экзаменов
 CREATE TABLE exam_status (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL
 );
-
--- Справочник статусов заданий
 CREATE TABLE assignment_status (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL
 );
-
--- Таблица заданий
 CREATE TABLE assignment (
     id BIGSERIAL PRIMARY KEY,
     discipline_id BIGINT REFERENCES discipline(id) ON DELETE CASCADE,
@@ -158,8 +123,6 @@ CREATE TABLE assignment (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- Таблица зачислений
 CREATE TABLE enrollment (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES "user"(id),
@@ -175,8 +138,6 @@ CREATE TABLE enrollment (
     updated_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(user_id, flow_id)
 );
-
--- Таблица экзаменов
 CREATE TABLE exam (
     id BIGSERIAL PRIMARY KEY,
     discipline_id BIGINT REFERENCES discipline(id) ON DELETE CASCADE,
@@ -192,47 +153,28 @@ CREATE TABLE exam (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-
--- ============================================
--- СОЗДАНИЕ СВЯЗУЮЩИХ ТАБЛИЦ (MANY-TO-MANY)
--- ============================================
-
--- Связь пользователей и ролей
 CREATE TABLE user_role (
     user_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES role(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, role_id)
 );
-
--- Связь дисциплин и преподавателей
 CREATE TABLE discipline_teacher (
     discipline_id BIGINT NOT NULL REFERENCES discipline(id) ON DELETE CASCADE,
     teacher_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     PRIMARY KEY (discipline_id, teacher_id)
 );
-
--- Связь занятий и аудиторий
 CREATE TABLE lesson_classroom (
     lesson_id BIGINT NOT NULL REFERENCES lesson(id) ON DELETE CASCADE,
     classroom_id BIGINT NOT NULL REFERENCES classroom(id) ON DELETE CASCADE,
     PRIMARY KEY (lesson_id, classroom_id)
 );
-
--- Связь экзаменов и аудиторий
 CREATE TABLE exam_classroom (
     exam_id BIGINT NOT NULL REFERENCES exam(id) ON DELETE CASCADE,
     classroom_id BIGINT NOT NULL REFERENCES classroom(id) ON DELETE CASCADE,
     PRIMARY KEY (exam_id, classroom_id)
 );
-
--- Таблица телефонов преподавателей
 CREATE TABLE lecturer_phone (
     lecturer_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     phone_number TEXT NOT NULL,
     PRIMARY KEY (lecturer_id, phone_number)
 );
-
--- ============================================
--- КОНЕЦ ИНИЦИАЛИЗАЦИИ
--- ============================================
-
