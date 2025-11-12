@@ -318,3 +318,7 @@ INSERT INTO lecturer_phone (lecturer_id, phone_number) VALUES
 ((SELECT id FROM "user" WHERE email = 'volkova@teacher.university.edu'), '+7-999-222-33-45'),
 ((SELECT id FROM "user" WHERE email = 'morozov@teacher.university.edu'), '+7-999-222-33-46'),
 ((SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), '+7-999-222-33-47');
+
+UPDATE lesson
+SET online_link = 'https://telemost.yandex.ru/abvgd'
+WHERE id = 1;
