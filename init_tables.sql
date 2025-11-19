@@ -1,4 +1,4 @@
-CREATE TABLE role (
+CREATE TABLE IF NOT EXISTS role (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE role (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE unit (
+CREATE TABLE IF NOT EXISTS unit (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     type VARCHAR(50) NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE unit (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE "user" (
+CREATE TABLE IF NOT EXISTS "user" (
     id BIGSERIAL PRIMARY KEY,
     full_name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE "user" (
     updated_at TIMESTAMPTZ DEFAULT now(),
     last_login_at TIMESTAMPTZ
 );
-CREATE TABLE flow (
+CREATE TABLE IF NOT EXISTS flow (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -54,21 +54,20 @@ CREATE TABLE flow (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE discipline (
+CREATE TABLE IF NOT EXISTS discipline (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT,
     ects_credits NUMERIC(4,1),
-    flow_id BIGINT REFERENCES flow(id) ON DELETE SET NULL,
-    lecturer_id BIGINT REFERENCES "user"(id) ON DELETE SET NULL,
+    unit_id BIGINT REFERENCES unit(id),
     level VARCHAR(20),
     language VARCHAR(50),
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE classroom (
+CREATE TABLE IF NOT EXISTS classroom (
     id BIGSERIAL PRIMARY KEY,
     building VARCHAR(100),
     room_number VARCHAR(20),
@@ -82,7 +81,7 @@ CREATE TABLE classroom (
     updated_at TIMESTAMPTZ DEFAULT now(),
     CONSTRAINT uq_classroom UNIQUE(building, room_number)
 );
-CREATE TABLE lesson (
+CREATE TABLE IF NOT EXISTS lesson (
     id BIGSERIAL PRIMARY KEY,
     flow_id BIGINT REFERENCES flow(id),
     type VARCHAR(20),
@@ -96,17 +95,17 @@ CREATE TABLE lesson (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE exam_status (
+CREATE TABLE IF NOT EXISTS exam_status (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL
 );
-CREATE TABLE assignment_status (
+CREATE TABLE IF NOT EXISTS assignment_status (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL
 );
-CREATE TABLE assignment (
+CREATE TABLE IF NOT EXISTS assignment (
     id BIGSERIAL PRIMARY KEY,
-    discipline_id BIGINT REFERENCES discipline(id) ON DELETE CASCADE,
+    flow_id BIGINT REFERENCES flow(id),
     title VARCHAR(255),
     type VARCHAR(20),
     description TEXT,
@@ -119,11 +118,10 @@ CREATE TABLE assignment (
     max_score NUMERIC(5,2),
     visibility VARCHAR(20),
     status VARCHAR(20),
-    status_id INT REFERENCES assignment_status(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE enrollment (
+CREATE TABLE IF NOT EXISTS enrollment (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES "user"(id),
     discipline_id BIGINT REFERENCES discipline(id),
@@ -138,42 +136,42 @@ CREATE TABLE enrollment (
     updated_at TIMESTAMPTZ DEFAULT now(),
     UNIQUE(user_id, flow_id)
 );
-CREATE TABLE exam (
+CREATE TABLE IF NOT EXISTS exam (
     id BIGSERIAL PRIMARY KEY,
-    discipline_id BIGINT REFERENCES discipline(id) ON DELETE CASCADE,
+    flow_id BIGINT REFERENCES flow(id),
     type VARCHAR(20),
     scheduled_start TIMESTAMPTZ,
     scheduled_end TIMESTAMPTZ,
+    auditorium_id BIGINT REFERENCES classroom(id),
     format VARCHAR(20),
     duration_min INT,
     max_score NUMERIC(5,2),
     proctor_id BIGINT REFERENCES "user"(id),
     status VARCHAR(20),
-    status_id INT REFERENCES exam_status(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
 );
-CREATE TABLE user_role (
+CREATE TABLE IF NOT EXISTS user_role (
     user_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     role_id BIGINT NOT NULL REFERENCES role(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, role_id)
 );
-CREATE TABLE discipline_teacher (
+CREATE TABLE IF NOT EXISTS discipline_teacher (
     discipline_id BIGINT NOT NULL REFERENCES discipline(id) ON DELETE CASCADE,
     teacher_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     PRIMARY KEY (discipline_id, teacher_id)
 );
-CREATE TABLE lesson_classroom (
+CREATE TABLE IF NOT EXISTS lesson_classroom (
     lesson_id BIGINT NOT NULL REFERENCES lesson(id) ON DELETE CASCADE,
     classroom_id BIGINT NOT NULL REFERENCES classroom(id) ON DELETE CASCADE,
     PRIMARY KEY (lesson_id, classroom_id)
 );
-CREATE TABLE exam_classroom (
+CREATE TABLE IF NOT EXISTS exam_classroom (
     exam_id BIGINT NOT NULL REFERENCES exam(id) ON DELETE CASCADE,
     classroom_id BIGINT NOT NULL REFERENCES classroom(id) ON DELETE CASCADE,
     PRIMARY KEY (exam_id, classroom_id)
 );
-CREATE TABLE lecturer_phone (
+CREATE TABLE IF NOT EXISTS lecturer_phone (
     lecturer_id BIGINT NOT NULL REFERENCES "user"(id) ON DELETE CASCADE,
     phone_number TEXT NOT NULL,
     PRIMARY KEY (lecturer_id, phone_number)

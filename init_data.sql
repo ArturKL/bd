@@ -21,7 +21,7 @@ ALTER SEQUENCE "user_id_seq" RESTART WITH 1;
 ALTER SEQUENCE flow_id_seq RESTART WITH 1;
 ALTER SEQUENCE discipline_id_seq RESTART WITH 1;
 ALTER SEQUENCE classroom_id_seq RESTART WITH 1;
-ALTER SEQUENCE lesson_id_seq RESTART WITH 1;
+-- ALTER SEQUENCE lesson_id_seq RESTART WITH 1;  -- Последовательность может иметь другое имя или не существовать
 ALTER SEQUENCE exam_status_id_seq RESTART WITH 1;
 ALTER SEQUENCE assignment_status_id_seq RESTART WITH 1;
 ALTER SEQUENCE assignment_id_seq RESTART WITH 1;
@@ -104,19 +104,15 @@ INSERT INTO flow (code, title, unit_id, owner_id, credits, cohort_year, modality
     (SELECT id FROM unit WHERE code = 'IGH'), 
     (SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), 
     3.0, 2023, 'hybrid', 'ru', '2023-10-01', '2024-02-28', '2023-10-15', '2024-02-15', '2024-02-28', '2024-03-10', 40, 'active');
-INSERT INTO discipline (code, title, description, ects_credits, flow_id, lecturer_id, level, language, status) VALUES
+INSERT INTO discipline (code, title, description, ects_credits, unit_id, level, language, status) VALUES
 ('MATH101', 'Математический анализ', 'Курс математического анализа для первого курса', 6.0, 
-    (SELECT id FROM flow WHERE code = 'MATH101-F23'), 
-    (SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), 'bachelor', 'ru', 'active'),
+    (SELECT id FROM unit WHERE code = 'MATH'), 'bachelor', 'ru', 'active'),
 ('CS201', 'Программирование на C#', 'Основы программирования на языке C#', 4.0, 
-    (SELECT id FROM flow WHERE code = 'CS201-F23'), 
-    (SELECT id FROM "user" WHERE email = 'volkova@teacher.university.edu'), 'bachelor', 'ru', 'active'),
+    (SELECT id FROM unit WHERE code = 'CS'), 'bachelor', 'ru', 'active'),
 ('CS202', 'Базы данных', 'Основы проектирования и работы с базами данных', 5.0, 
-    (SELECT id FROM flow WHERE code = 'CS201-F23'), 
-    (SELECT id FROM "user" WHERE email = 'morozov@teacher.university.edu'), 'bachelor', 'ru', 'active'),
+    (SELECT id FROM unit WHERE code = 'CS'), 'bachelor', 'ru', 'active'),
 ('HIST101', 'История России', 'Курс истории России с древнейших времен до наших дней', 3.0, 
-    (SELECT id FROM flow WHERE code = 'HIST101-F23'), 
-    (SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), 'bachelor', 'ru', 'active');
+    (SELECT id FROM unit WHERE code = 'HIST'), 'bachelor', 'ru', 'active');
 INSERT INTO classroom (building, room_number, capacity, floor, has_projector, has_pc, is_accessible, status) VALUES
 ('Главный корпус', '101', 30, 1, TRUE, TRUE, TRUE, 'active'),
 ('Главный корпус', '205', 25, 2, TRUE, FALSE, TRUE, 'active'),
@@ -134,17 +130,17 @@ INSERT INTO assignment_status (name) VALUES
 ('published'),
 ('closed'),
 ('graded');
-INSERT INTO assignment (discipline_id, title, type, description, release_at, due_at, late_policy, submission_type, allow_multiple, max_attempts, max_score, visibility, status, status_id) VALUES
-((SELECT id FROM discipline WHERE code = 'MATH101'), 'Домашнее задание 1: Пределы', 'homework', 'Решить задачи на вычисление пределов', '2023-09-10 00:00:00+03', '2023-09-24 23:59:59+03', 'strict', 'file', FALSE, 1, 10.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'MATH101'), 'Контрольная работа 1', 'exam', 'Контрольная работа по теме "Производные"', '2023-10-01 00:00:00+03', '2023-10-08 23:59:59+03', 'strict', 'file', FALSE, 1, 20.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'MATH101'), 'Итоговый экзамен', 'exam', 'Итоговый экзамен по математическому анализу', '2024-01-15 00:00:00+03', '2024-01-31 23:59:59+03', 'strict', 'file', FALSE, 1, 100.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'CS201'), 'Лабораторная работа 1: Основы C#', 'lab', 'Создать консольное приложение', '2023-09-05 00:00:00+03', '2023-09-19 23:59:59+03', 'penalty', 'file', TRUE, 3, 15.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'CS201'), 'Проект: Калькулятор', 'project', 'Разработать калькулятор с GUI', '2023-10-01 00:00:00+03', '2023-11-15 23:59:59+03', 'penalty', 'file', FALSE, 1, 30.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'CS201'), 'Курсовая работа', 'project', 'Разработать полноценное приложение', '2023-11-01 00:00:00+03', '2023-12-20 23:59:59+03', 'penalty', 'file', FALSE, 1, 80.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'CS202'), 'Домашнее задание: SQL запросы', 'homework', 'Написать SQL запросы для заданной БД', '2023-09-15 00:00:00+03', '2023-09-29 23:59:59+03', 'penalty', 'file', TRUE, 2, 12.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'CS202'), 'Проект: Проектирование БД', 'project', 'Спроектировать и реализовать базу данных', '2023-10-15 00:00:00+03', '2023-12-10 23:59:59+03', 'penalty', 'file', FALSE, 1, 60.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'HIST101'), 'Реферат: Реформы Петра I', 'essay', 'Написать реферат на заданную тему', '2023-09-10 00:00:00+03', '2023-10-10 23:59:59+03', 'penalty', 'file', FALSE, 1, 25.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published')),
-((SELECT id FROM discipline WHERE code = 'HIST101'), 'Курсовая работа', 'essay', 'Написать курсовую работу по истории', '2023-10-15 00:00:00+03', '2023-12-15 23:59:59+03', 'penalty', 'file', FALSE, 1, 55.0, 'visible', 'published', (SELECT id FROM assignment_status WHERE name = 'published'));
+INSERT INTO assignment (flow_id, title, type, description, release_at, due_at, late_policy, submission_type, allow_multiple, max_attempts, max_score, visibility, status) VALUES
+((SELECT id FROM flow WHERE code = 'MATH101-F23'), 'Домашнее задание 1: Пределы', 'homework', 'Решить задачи на вычисление пределов', '2023-09-10 00:00:00+03', '2023-09-24 23:59:59+03', 'strict', 'file', FALSE, 1, 10.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'MATH101-F23'), 'Контрольная работа 1', 'exam', 'Контрольная работа по теме "Производные"', '2023-10-01 00:00:00+03', '2023-10-08 23:59:59+03', 'strict', 'file', FALSE, 1, 20.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'MATH101-F23'), 'Итоговый экзамен', 'exam', 'Итоговый экзамен по математическому анализу', '2024-01-15 00:00:00+03', '2024-01-31 23:59:59+03', 'strict', 'file', FALSE, 1, 100.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'Лабораторная работа 1: Основы C#', 'lab', 'Создать консольное приложение', '2023-09-05 00:00:00+03', '2023-09-19 23:59:59+03', 'penalty', 'file', TRUE, 3, 15.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'Проект: Калькулятор', 'project', 'Разработать калькулятор с GUI', '2023-10-01 00:00:00+03', '2023-11-15 23:59:59+03', 'penalty', 'file', FALSE, 1, 30.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'Курсовая работа', 'project', 'Разработать полноценное приложение', '2023-11-01 00:00:00+03', '2023-12-20 23:59:59+03', 'penalty', 'file', FALSE, 1, 80.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'Домашнее задание: SQL запросы', 'homework', 'Написать SQL запросы для заданной БД', '2023-09-15 00:00:00+03', '2023-09-29 23:59:59+03', 'penalty', 'file', TRUE, 2, 12.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'Проект: Проектирование БД', 'project', 'Спроектировать и реализовать базу данных', '2023-10-15 00:00:00+03', '2023-12-10 23:59:59+03', 'penalty', 'file', FALSE, 1, 60.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'HIST101-F23'), 'Реферат: Реформы Петра I', 'essay', 'Написать реферат на заданную тему', '2023-09-10 00:00:00+03', '2023-10-10 23:59:59+03', 'penalty', 'file', FALSE, 1, 25.0, 'visible', 'published'),
+((SELECT id FROM flow WHERE code = 'HIST101-F23'), 'Курсовая работа', 'essay', 'Написать курсовую работу по истории', '2023-10-15 00:00:00+03', '2023-12-15 23:59:59+03', 'penalty', 'file', FALSE, 1, 55.0, 'visible', 'published');
 INSERT INTO enrollment (user_id, discipline_id, flow_id, enrolled_at, attendance_pct, current_score, final_grade, status) VALUES
 ((SELECT id FROM "user" WHERE email = 'ivanov@student.university.edu'), 
     (SELECT id FROM discipline WHERE code = 'MATH101'), 
@@ -222,23 +218,31 @@ INSERT INTO enrollment (user_id, discipline_id, flow_id, enrolled_at, attendance
     (SELECT id FROM discipline WHERE code = 'HIST101'), 
     (SELECT id FROM flow WHERE code = 'HIST101-F23'), 
     '2023-09-01 12:05:00+03', 95.0, 92.0, NULL, 'active');
-INSERT INTO exam (discipline_id, type, scheduled_start, scheduled_end, format, duration_min, max_score, proctor_id, status, status_id) VALUES
-((SELECT id FROM discipline WHERE code = 'MATH101'), 'final', '2024-01-20 09:00:00+03', '2024-01-20 12:00:00+03', 'written', 180, 100.0, 
-    (SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned')),
-((SELECT id FROM discipline WHERE code = 'CS201'), 'midterm', '2023-10-15 10:00:00+03', '2023-10-15 11:30:00+03', 'test', 90, 50.0, 
-    (SELECT id FROM "user" WHERE email = 'volkova@teacher.university.edu'), 'completed', (SELECT id FROM exam_status WHERE name = 'completed')),
-((SELECT id FROM discipline WHERE code = 'CS202'), 'final', '2024-01-25 14:00:00+03', '2024-01-25 17:00:00+03', 'written', 180, 100.0, 
-    (SELECT id FROM "user" WHERE email = 'morozov@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned')),
-((SELECT id FROM discipline WHERE code = 'HIST101'), 'final', '2024-01-22 10:00:00+03', '2024-01-22 12:00:00+03', 'oral', 120, 50.0, 
-    (SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned')),
-((SELECT id FROM discipline WHERE code = 'MATH101'), 'midterm', '2025-02-15 10:00:00+03', '2025-02-15 12:00:00+03', 'test', 120, 50.0, 
-    (SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned')),
-((SELECT id FROM discipline WHERE code = 'CS201'), 'final', '2025-02-20 14:00:00+03', '2025-02-20 17:00:00+03', 'written', 180, 100.0, 
-    (SELECT id FROM "user" WHERE email = 'volkova@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned')),
-((SELECT id FROM discipline WHERE code = 'CS202'), 'midterm', '2025-02-18 10:00:00+03', '2025-02-18 12:00:00+03', 'test', 120, 50.0, 
-    (SELECT id FROM "user" WHERE email = 'morozov@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned')),
-((SELECT id FROM discipline WHERE code = 'HIST101'), 'midterm', '2025-03-10 10:00:00+03', '2025-03-10 12:00:00+03', 'oral', 120, 50.0, 
-    (SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), 'planned', (SELECT id FROM exam_status WHERE name = 'planned'));
+INSERT INTO exam (flow_id, type, scheduled_start, scheduled_end, auditorium_id, format, duration_min, max_score, proctor_id, status) VALUES
+((SELECT id FROM flow WHERE code = 'MATH101-F23'), 'final', '2024-01-20 09:00:00+03', '2024-01-20 12:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '101'), 'written', 180, 100.0, 
+    (SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), 'planned'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'midterm', '2023-10-15 10:00:00+03', '2023-10-15 11:30:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205'), 'test', 90, 50.0, 
+    (SELECT id FROM "user" WHERE email = 'volkova@teacher.university.edu'), 'completed'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'final', '2024-01-25 14:00:00+03', '2024-01-25 17:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205'), 'written', 180, 100.0, 
+    (SELECT id FROM "user" WHERE email = 'morozov@teacher.university.edu'), 'planned'),
+((SELECT id FROM flow WHERE code = 'HIST101-F23'), 'final', '2024-01-22 10:00:00+03', '2024-01-22 12:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '310'), 'oral', 120, 50.0, 
+    (SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), 'planned'),
+((SELECT id FROM flow WHERE code = 'MATH101-F23'), 'midterm', '2025-02-15 10:00:00+03', '2025-02-15 12:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '101'), 'test', 120, 50.0, 
+    (SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), 'planned'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'final', '2025-02-20 14:00:00+03', '2025-02-20 17:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205'), 'written', 180, 100.0, 
+    (SELECT id FROM "user" WHERE email = 'volkova@teacher.university.edu'), 'planned'),
+((SELECT id FROM flow WHERE code = 'CS201-F23'), 'midterm', '2025-02-18 10:00:00+03', '2025-02-18 12:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205'), 'test', 120, 50.0, 
+    (SELECT id FROM "user" WHERE email = 'morozov@teacher.university.edu'), 'planned'),
+((SELECT id FROM flow WHERE code = 'HIST101-F23'), 'midterm', '2025-03-10 10:00:00+03', '2025-03-10 12:00:00+03', 
+    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '310'), 'oral', 120, 50.0, 
+    (SELECT id FROM "user" WHERE email = 'novikova@teacher.university.edu'), 'planned');
 INSERT INTO lesson (flow_id, type, topic, start_at, end_at, teacher_id, online_link, attendance_required, status) VALUES
 ((SELECT id FROM flow WHERE code = 'MATH101-F23'), 'lecture', 'Введение в математический анализ. Пределы', '2023-09-05 09:00:00+03', '2023-09-05 10:30:00+03', 
     (SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), NULL, TRUE, 'completed'),
@@ -303,15 +307,16 @@ SELECT l.id, (SELECT id FROM classroom WHERE building = 'Корпус Б' AND ro
 FROM lesson l
 WHERE l.topic = 'Практическая работа: Работа с БД'
 LIMIT 1;
-INSERT INTO exam_classroom (exam_id, classroom_id) VALUES
-((SELECT id FROM exam WHERE discipline_id = (SELECT id FROM discipline WHERE code = 'MATH101') AND scheduled_start = '2024-01-20 09:00:00+03'), 
-    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '101')),
-((SELECT id FROM exam WHERE discipline_id = (SELECT id FROM discipline WHERE code = 'CS201') AND scheduled_start = '2023-10-15 10:00:00+03'), 
-    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205')),
-((SELECT id FROM exam WHERE discipline_id = (SELECT id FROM discipline WHERE code = 'CS202') AND scheduled_start = '2024-01-25 14:00:00+03'), 
-    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205')),
-((SELECT id FROM exam WHERE discipline_id = (SELECT id FROM discipline WHERE code = 'HIST101') AND scheduled_start = '2024-01-22 10:00:00+03'), 
-    (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '310'));
+-- exam_classroom не нужен, так как auditorium_id уже указан в таблице exam
+-- INSERT INTO exam_classroom (exam_id, classroom_id) VALUES
+-- ((SELECT id FROM exam WHERE flow_id = (SELECT id FROM flow WHERE code = 'MATH101-F23') AND scheduled_start = '2024-01-20 09:00:00+03'), 
+--     (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '101')),
+-- ((SELECT id FROM exam WHERE flow_id = (SELECT id FROM flow WHERE code = 'CS201-F23') AND scheduled_start = '2023-10-15 10:00:00+03'), 
+--     (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205')),
+-- ((SELECT id FROM exam WHERE flow_id = (SELECT id FROM flow WHERE code = 'CS201-F23') AND scheduled_start = '2024-01-25 14:00:00+03'), 
+--     (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '205')),
+-- ((SELECT id FROM exam WHERE flow_id = (SELECT id FROM flow WHERE code = 'HIST101-F23') AND scheduled_start = '2024-01-22 10:00:00+03'), 
+--     (SELECT id FROM classroom WHERE building = 'Главный корпус' AND room_number = '310'));
 INSERT INTO lecturer_phone (lecturer_id, phone_number) VALUES
 ((SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), '+7-999-222-33-44'),
 ((SELECT id FROM "user" WHERE email = 'smirnov@teacher.university.edu'), '+7-495-123-45-70'),
