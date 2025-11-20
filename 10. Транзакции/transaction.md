@@ -37,6 +37,12 @@ COMMIT;
 - SELECT внутри транзакции показал созданную запись с данными пользователя и связанного подразделения
 - COMMIT выполнен успешно (0 row(s) affected)
 
+**Результат SELECT:**
+
+| id | full_name      | email                  | unit_name                          | unit_status |
+|----|----------------|------------------------|------------------------------------|-------------|
+| 42 | Сидоров Сидор  | sidorov@example.com    | Институт математики и информатики | active      |
+
 ---
 
 **Запрос 1.1.2: Добавление записи в enrollment и обновление связанного flow**
@@ -72,6 +78,12 @@ COMMIT;
 - SELECT показал созданную запись зачисления с данными потока
 - UPDATE обновил статус потока
 - COMMIT выполнен успешно, все изменения сохранены
+
+**Результат SELECT:**
+
+| id | user_id | flow_id | status   | flow_title                    |
+|----|---------|---------|----------|-------------------------------|
+| 25 | 1       | 1       | enrolled | Математический анализ, поток 2022 |
 
 ---
 
@@ -119,6 +131,26 @@ WHERE email = 'test-rollback@example.com';
 - ROLLBACK выполнен успешно (0 row(s) affected)
 - Второй SELECT после ROLLBACK показал `user_count_after_rollback = 0` — изменения не сохранились
 
+**Результаты SELECT:**
+
+**Первый SELECT (до транзакции):**
+
+| user_count |
+|------------|
+| 0          |
+
+**SELECT внутри транзакции (до ROLLBACK):**
+
+| id | full_name | email                      |
+|----|-----------|----------------------------|
+| 43 | Test User | test-rollback@example.com  |
+
+**Второй SELECT (после ROLLBACK):**
+
+| user_count_after_rollback |
+|---------------------------|
+| 0                          |
+
 ---
 
 **Запрос 1.2.2: Откат при обновлении связанных таблиц**
@@ -159,6 +191,26 @@ SELECT COUNT(*) as enrollment_count_after FROM enrollment;
 - ROLLBACK выполнен успешно
 - `enrollment_count_after` — количество записей после ROLLBACK (равно `enrollment_count_before`)
 
+**Результаты SELECT:**
+
+**SELECT до транзакции:**
+
+| enrollment_count_before |
+|-------------------------|
+| 24                       |
+
+**SELECT внутри транзакции (до ROLLBACK):**
+
+| enrollment_count_inside |
+|-------------------------|
+| 25                       |
+
+**SELECT после ROLLBACK:**
+
+| enrollment_count_after |
+|-------------------------|
+| 24                       |
+
 ---
 
 ### 1.3. Транзакция с ошибкой (деление на 0)
@@ -197,6 +249,12 @@ COMMIT;
 - `SELECT 100 / 0` вызвал **ERROR: division by zero [22012]**
 - UPDATE был проигнорирован с ошибкой **ERROR: current transaction is aborted, commands ignored until end of transaction block [25P02]**
 - ROLLBACK выполнен успешно, все изменения откатились
+
+**Результат SELECT (начальное состояние):**
+
+| initial_count |
+|---------------|
+| 0              |
 
 ---
 
@@ -285,6 +343,22 @@ WHERE id = 1;
 - **Результат**: SELECT в T2 показал старое значение `full_name`, не увидев незакоммиченные изменения из T1
 - Это подтверждает отсутствие "грязного чтения" даже на минимальном уровне изоляции READ COMMITTED
 
+**Результаты SELECT:**
+
+**SELECT в транзакции T1 (после UPDATE без COMMIT):**
+
+| id | full_name        | email                        |
+|----|------------------|------------------------------|
+| 1  | Updated Name T1  | ivanov@student.university.edu |
+
+**SELECT в транзакции T2 (параллельно с T1):**
+
+| id | full_name              | email                        |
+|----|------------------------|------------------------------|
+| 1  | Иванов Иван Иванович   | ivanov@student.university.edu |
+
+*Примечание: T2 видит старое значение `full_name`, так как T1 ещё не сделала COMMIT.*
+
 ---
 
 **Запрос 2.1.2: UPDATE без COMMIT в T1 и чтение в T2**
@@ -327,6 +401,22 @@ SELECT id, name, status FROM unit WHERE id = 1;
 - В T1: ROLLBACK выполнен для завершения транзакции
 - **Результат**: SELECT в T2 показал старое значение `name`, подтверждая, что незакоммиченные данные не видны
 - T2 получил старое значение без ожидания, так как T1 не заблокировала строку для чтения
+
+**Результаты SELECT:**
+
+**SELECT в транзакции T1 (после UPDATE без COMMIT):**
+
+| id | name                  | status |
+|----|-----------------------|--------|
+| 1  | Updated Unit Name T1  | active |
+
+**SELECT в транзакции T2 (параллельно с T1):**
+
+| id | name                          | status |
+|----|-------------------------------|--------|
+| 1  | Институт математики и информатики | active |
+
+*Примечание: T2 видит старое значение `name`, так как T1 ещё не сделала COMMIT.*
 
 ---
 
@@ -384,6 +474,22 @@ COMMIT;
 - **Результат**: Второй SELECT в T1 показал новые значения (`full_name = 'Non-repeatable Read Test'`, `status = 'updated'`)
 - Это демонстрирует неповторяющееся чтение на уровне READ COMMITTED: два одинаковых SELECT дают разные результаты
 
+**Результаты SELECT:**
+
+**Первый SELECT в транзакции T1:**
+
+| id | full_name              | email                        | status |
+|----|------------------------|------------------------------|--------|
+| 1  | Иванов Иван Иванович   | ivanov@student.university.edu | active |
+
+**Второй SELECT в транзакции T1 (после UPDATE+COMMIT в T2):**
+
+| id | full_name                  | email                        | status |
+|----|----------------------------|------------------------------|--------|
+| 1  | Non-repeatable Read Test   | ivanov@student.university.edu | updated |
+
+*Примечание: Второй SELECT показал другие значения, так как T2 успела сделать UPDATE и COMMIT между двумя чтениями. Это демонстрирует неповторяющееся чтение.*
+
 ---
 
 **Запрос 2.2.2: Детальный пример неповторяющегося чтения**
@@ -431,6 +537,22 @@ COMMIT;
 - В T1: COMMIT выполнен успешно
 - **Результат**: Второй SELECT показывает новое значение `status = 'completed'`, `updated_at` также изменился
 - Это подтверждает неповторяющееся чтение: данные изменились между двумя SELECT в одной транзакции
+
+**Результаты SELECT:**
+
+**Первый SELECT в транзакции T1:**
+
+| id | status   | updated_at                  |
+|----|----------|-----------------------------|
+| 1  | enrolled | 2023-09-15 10:30:00+03      |
+
+**Второй SELECT в транзакции T1 (после UPDATE+COMMIT в T2):**
+
+| id | status    | updated_at                  |
+|----|-----------|-----------------------------|
+| 1  | completed | 2023-11-19 15:45:23+03      |
+
+*Примечание: Второй SELECT показал другие значения (`status` и `updated_at` изменились), так как T2 успела сделать UPDATE и COMMIT между двумя чтениями.*
 
 ---
 
@@ -485,6 +607,22 @@ COMMIT;
 - **Результат**: Второй SELECT показывает те же данные, что и первый SELECT (снимок на момент начала T1)
 - Это подтверждает, что REPEATABLE READ предотвращает неповторяющееся чтение
 
+**Результаты SELECT:**
+
+**Первый SELECT в транзакции T1 (уровень REPEATABLE READ):**
+
+| id | full_name              | status |
+|----|------------------------|--------|
+| 1  | Иванов Иван Иванович   | active |
+
+**Второй SELECT в транзакции T1 (после UPDATE+COMMIT в T2):**
+
+| id | full_name              | status |
+|----|------------------------|--------|
+| 1  | Иванов Иван Иванович   | active |
+
+*Примечание: Второй SELECT показал те же данные, что и первый, даже несмотря на то, что T2 успела сделать UPDATE и COMMIT между чтениями. Это демонстрирует защиту от неповторяющегося чтения на уровне REPEATABLE READ.*
+
 ---
 
 **Запрос 2.3.2: Фантомное чтение через INSERT в T2**
@@ -535,6 +673,22 @@ COMMIT;
 - В T1: COMMIT выполнен успешно
 - **Результат**: Второй SELECT COUNT(*) показал то же значение (снимок на момент начала T1)
 - В PostgreSQL REPEATABLE READ защищает от фантомного чтения благодаря снимку данных на момент начала транзакции
+
+**Результаты SELECT:**
+
+**Первый SELECT COUNT(*) в транзакции T1 (уровень REPEATABLE READ):**
+
+| user_count |
+|------------|
+| 25          |
+
+**Второй SELECT COUNT(*) в транзакции T1 (после INSERT+COMMIT в T2):**
+
+| user_count |
+|------------|
+| 25          |
+
+*Примечание: Второй SELECT COUNT(*) показал то же значение, что и первый, даже несмотря на то, что T2 успела добавить новую запись и сделать COMMIT между чтениями. Это демонстрирует защиту от фантомного чтения на уровне REPEATABLE READ в PostgreSQL.*
 
 ---
 
@@ -693,6 +847,34 @@ WHERE email IN ('savepoint1@example.com', 'savepoint2@example.com');
 - COMMIT выполнен успешно
 - `final_count = 1` — в базе осталась только первая запись
 
+**Результаты SELECT:**
+
+**SELECT COUNT(*) после первого INSERT:**
+
+| count_after_insert1 |
+|---------------------|
+| 1                    |
+
+**SELECT COUNT(*) перед ROLLBACK TO SAVEPOINT:**
+
+| count_before_rollback |
+|----------------------|
+| 2                     |
+
+**SELECT COUNT(*) после ROLLBACK TO SAVEPOINT sp1:**
+
+| count_after_rollback_to_sp1 |
+|------------------------------|
+| 1                             |
+
+*Примечание: После отката к SAVEPOINT sp1 осталась только первая запись (savepoint1), вторая запись (savepoint2) была откачена.*
+
+**SELECT COUNT(*) после COMMIT:**
+
+| final_count |
+|-------------|
+| 1            |
+
 ---
 
 **Запрос 3.1.2: SAVEPOINT с сохранением изменений**
@@ -736,6 +918,20 @@ WHERE user_id = 3 AND flow_id = 1;
 - SELECT внутри транзакции показал обновлённую запись с `current_score = 90.0`
 - COMMIT выполнен успешно
 - Финальный SELECT показал, что изменения сохранены: `current_score = 90.0`
+
+**Результаты SELECT:**
+
+**SELECT внутри транзакции (после UPDATE):**
+
+| id | user_id | status   | current_score |
+|----|---------|----------|---------------|
+| 26 | 3       | enrolled | 90.0          |
+
+**SELECT после COMMIT:**
+
+| id | user_id | status   | current_score |
+|----|---------|----------|---------------|
+| 26 | 3       | enrolled | 90.0          |
 
 ---
 
@@ -813,6 +1009,36 @@ WHERE email IN ('multisp1@example.com', 'multisp2@example.com');
 - COMMIT выполнен успешно
 - `final_count = 1` — в базе остался только первый пользователь (multisp1)
 
+**Результаты SELECT:**
+
+**SELECT COUNT(*) перед первым ROLLBACK:**
+
+| all_changes |
+|-------------|
+| 2           |
+
+**SELECT COUNT(*) после ROLLBACK TO SAVEPOINT sp2:**
+
+| after_rollback_to_sp2 |
+|-----------------------|
+| 2                      |
+
+*Примечание: После отката к sp2 оба пользователя остались (откатилось только UPDATE unit).*
+
+**SELECT COUNT(*) после ROLLBACK TO SAVEPOINT sp1:**
+
+| after_rollback_to_sp1 |
+|-----------------------|
+| 1                      |
+
+*Примечание: После отката к sp1 остался только первый пользователь (multisp1), второй пользователь (multisp2) был откачен.*
+
+**SELECT COUNT(*) после COMMIT:**
+
+| final_count |
+|-------------|
+| 1            |
+
 ---
 
 **Запрос 3.2.2: Возврат на разные SAVEPOINT**
@@ -877,6 +1103,30 @@ COMMIT;
 - ROLLBACK TO SAVEPOINT checkpoint1 выполнен успешно
 - SELECT показал `current_score = 75.0` (откатились второе и третье изменения)
 - COMMIT выполнен успешно, в базе сохранился `current_score = 75.0`
+
+**Результаты SELECT:**
+
+**SELECT перед первым ROLLBACK (current_score = 85.0):**
+
+| id | current_score |
+|----|---------------|
+| 27 | 85.0          |
+
+**SELECT после ROLLBACK TO SAVEPOINT checkpoint2 (current_score = 80.0):**
+
+| id | current_score |
+|----|---------------|
+| 27 | 80.0          |
+
+*Примечание: После отката к checkpoint2 балл вернулся к 80.0 (откатилось третье изменение).*
+
+**SELECT после ROLLBACK TO SAVEPOINT checkpoint1 (current_score = 75.0):**
+
+| id | current_score |
+|----|---------------|
+| 27 | 75.0          |
+
+*Примечание: После отката к checkpoint1 балл вернулся к 75.0 (откатились второе и третье изменения).*
 
 ---
 
