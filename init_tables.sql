@@ -33,10 +33,24 @@ CREATE TABLE IF NOT EXISTS "user" (
     updated_at TIMESTAMPTZ DEFAULT now(),
     last_login_at TIMESTAMPTZ
 );
+CREATE TABLE IF NOT EXISTS discipline (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    ects_credits NUMERIC(4,1),
+    unit_id BIGINT REFERENCES unit(id),
+    level VARCHAR(20),
+    language VARCHAR(50),
+    status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS flow (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     title VARCHAR(255) NOT NULL,
+    discipline_id BIGINT REFERENCES discipline(id),
     unit_id BIGINT REFERENCES unit(id),
     owner_id BIGINT REFERENCES "user"(id),
     credits NUMERIC(4,1),
@@ -50,19 +64,6 @@ CREATE TABLE IF NOT EXISTS flow (
     exam_window_end DATE,
     grade_submit_deadline DATE,
     max_students INT,
-    status VARCHAR(20) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now(),
-    updated_at TIMESTAMPTZ DEFAULT now()
-);
-CREATE TABLE IF NOT EXISTS discipline (
-    id BIGSERIAL PRIMARY KEY,
-    code VARCHAR(50) UNIQUE NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    ects_credits NUMERIC(4,1),
-    unit_id BIGINT REFERENCES unit(id),
-    level VARCHAR(20),
-    language VARCHAR(50),
     status VARCHAR(20) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
@@ -124,16 +125,16 @@ CREATE TABLE IF NOT EXISTS assignment (
 CREATE TABLE IF NOT EXISTS enrollment (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT REFERENCES "user"(id),
-    discipline_id BIGINT REFERENCES discipline(id),
     flow_id BIGINT REFERENCES flow(id),
     enrolled_at TIMESTAMPTZ,
     dropped_at TIMESTAMPTZ,
     attendance_pct NUMERIC(5,2),
     current_score NUMERIC(6,2),
     final_grade VARCHAR(5),
-    status VARCHAR(20),
+    status VARCHAR(20) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT chk_enrollment_status CHECK (status IN ('active', 'dropped', 'completed')),
     UNIQUE(user_id, flow_id)
 );
 CREATE TABLE IF NOT EXISTS exam (
@@ -176,3 +177,19 @@ CREATE TABLE IF NOT EXISTS lecturer_phone (
     phone_number TEXT NOT NULL,
     PRIMARY KEY (lecturer_id, phone_number)
 );
+
+-- ПРИМЕЧАНИЕ О РАСШИРЕНИИ pg_cron:
+-- Расширение pg_cron требует системной установки на сервере PostgreSQL.
+-- Оно не устанавливается автоматически и должно быть установлено администратором.
+-- 
+-- Для установки на macOS с Homebrew:
+--   brew install pg_cron
+-- 
+-- Для установки на Linux (Debian/Ubuntu):
+--   apt-get install postgresql-17-pg-cron
+-- 
+-- После системной установки выполните в базе данных:
+--   CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- 
+-- Если расширение не установлено, запросы на создание и просмотр кронов не будут работать.
+-- Триггеры работают независимо от pg_cron.
