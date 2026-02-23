@@ -1,3 +1,5 @@
+# Триггеры
+
 ## ТРИГГЕРЫ
 
 ### 1. BEFORE + ROW LEVEL + NEW: Автоматическое обновление created_at перед INSERT
@@ -415,3 +417,5 @@ ORDER BY t.event_object_table, t.trigger_name;
 | trigger_log_user_deletion | user | DELETE | AFTER | ROW | log_user_deletion |
 | trigger_user_updated_at | user | UPDATE | BEFORE | ROW | update_updated_at |
 | trigger_validate_user_email | user | INSERT | BEFORE | ROW | validate_user_email |
+
+---
