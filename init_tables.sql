@@ -1,6 +1,3 @@
--- Canonical university schema (single DB for all tasks)
--- Source of truth for object names and compatibility columns.
-
 CREATE TABLE IF NOT EXISTS role (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
