@@ -1,0 +1,72 @@
+pg_stat_statements:
+  query: |
+    SELECT
+      'SELECT' as query_type,
+      SUM(calls) as calls,
+      SUM(total_exec_time) as total_exec_time
+    FROM pg_stat_statements
+    WHERE query LIKE 'SELECT%'
+    UNION ALL
+    SELECT
+      'INSERT' as query_type,
+      SUM(calls) as calls,
+      SUM(total_exec_time) as total_exec_time
+    FROM pg_stat_statements
+    WHERE query LIKE 'INSERT%'
+    UNION ALL
+    SELECT
+      'UPDATE' as query_type,
+      SUM(calls) as calls,
+      SUM(total_exec_time) as total_exec_time
+    FROM pg_stat_statements
+    WHERE query LIKE 'UPDATE%'
+    UNION ALL
+    SELECT
+      'DELETE' as query_type,
+      SUM(calls) as calls,
+      SUM(total_exec_time) as total_exec_time
+    FROM pg_stat_statements
+    WHERE query LIKE 'DELETE%'
+  metrics:
+    - query_type:
+        usage: "LABEL"
+        description: "Type of SQL query"
+    - calls:
+        usage: "COUNTER"
+        description: "Number of times executed"
+    - total_exec_time:
+        usage: "COUNTER"
+        description: "Total execution time in milliseconds"
+
+pg_active_sessions:
+  query: |
+    SELECT
+      state,
+      COUNT(*) as count
+    FROM pg_stat_activity
+    WHERE datname = current_database()
+    GROUP BY state
+  metrics:
+    - state:
+        usage: "LABEL"
+        description: "Connection state"
+    - count:
+        usage: "GAUGE"
+        description: "Number of connections"
+
+pg_version_info:
+  query: |
+    SELECT
+      1 as up,
+      EXTRACT(EPOCH FROM pg_postmaster_start_time) as start_time,
+      CAST(current_setting('server_version_num') AS INTEGER) as version
+  metrics:
+    - up:
+        usage: "GAUGE"
+        description: "1 if postgres is up"
+    - start_time:
+        usage: "GAUGE"
+        description: "Postgres start time"
+    - version:
+        usage: "GAUGE"
+        description: "Postgres version number"
