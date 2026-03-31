@@ -1,0 +1,240 @@
+# PostgreSQL: primary :15432, physical standby :15433, logical subscriber :15434.
+# Шардирование (postgres_fdw): router :15440, shard1 :15441, shard2 :15442.
+# pgAdmin (опционально): docker compose --profile tools up -d
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg_primary
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    command:
+      - postgres
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.lab.conf
+      - -c
+      - wal_level=logical
+      - -c
+      - max_wal_senders=16
+      - -c
+      - max_replication_slots=16
+      - -c
+      - hot_standby=on
+      - -c
+      - listen_addresses=*
+      - -c
+      - max_logical_replication_workers=8
+    ports:
+      - "15432:5432"
+    volumes:
+      - pg_primary_data:/var/lib/postgresql/data
+      - ./docker/postgres-primary/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/postgres-primary/pg_hba.lab.conf:/etc/postgresql/pg_hba.lab.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d course_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flyway:
+    image: flyway/flyway
+    container_name: flyway_primary
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command:
+      - migrate
+      - -baselineOnMigrate=true
+    volumes:
+      - ./db/migrations:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/course_db
+      FLYWAY_USER: admin
+      FLYWAY_PASSWORD: adminpass
+      FLYWAY_BASELINE_VERSION: 0
+      FLYWAY_BASELINE_DESCRIPTION: Initial baseline
+      FLYWAY_SCHEMAS: public
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+
+  postgres-physical-replica:
+    image: postgres:16
+    container_name: pg_replica_physical
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+    environment:
+      PGPASSWORD: adminpass
+      POSTGRES_PASSWORD: adminpass
+    ports:
+      - "15433:5432"
+    volumes:
+      - pg_physical_data:/var/lib/postgresql/data
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        if [ ! -f "$$PGDATA/PG_VERSION" ]; then
+          echo "[physical-replica] waiting for primary..."
+          until pg_isready -h postgres -p 5432 -q; do sleep 2; done
+          echo "[physical-replica] pg_basebackup..."
+          rm -rf "$$PGDATA"/*
+          export PGPASSWORD=replicatorpass
+          pg_basebackup -h postgres -p 5432 -U replicator -D "$$PGDATA" -Fp -Xs -P -R
+          unset PGPASSWORD
+        fi
+        exec docker-entrypoint.sh postgres -c hot_standby=on -c max_wal_senders=16 -c max_replication_slots=16
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d course_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-logical:
+    image: postgres:16
+    container_name: pg_logical_sub
+    environment:
+      POSTGRES_DB: course_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    ports:
+      - "15434:5432"
+    volumes:
+      - pg_logical_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d course_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  flyway-logical:
+    image: flyway/flyway
+    container_name: flyway_logical
+    depends_on:
+      postgres-logical:
+        condition: service_healthy
+    command:
+      - migrate
+      - -baselineOnMigrate=true
+      - -target=4
+    volumes:
+      - ./db/migrations:/flyway/sql
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres-logical:5432/course_db
+      FLYWAY_USER: admin
+      FLYWAY_PASSWORD: adminpass
+      FLYWAY_BASELINE_VERSION: 0
+      FLYWAY_BASELINE_DESCRIPTION: Initial baseline
+      FLYWAY_SCHEMAS: public
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+
+  logical-init:
+    image: postgres:16
+    container_name: logical_init
+    depends_on:
+      flyway:
+        condition: service_completed_successfully
+      flyway-logical:
+        condition: service_completed_successfully
+    environment:
+      PGPASSWORD: adminpass
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        echo "[logical-init] waiting for subscriber and publisher..."
+        until pg_isready -h postgres-logical -p 5432 -q; do sleep 2; done
+        until pg_isready -h postgres -p 5432 -q; do sleep 2; done
+        EXISTS=$$(psql -h postgres-logical -U admin -d course_db -tAc "SELECT count(*) FROM pg_subscription WHERE subname = 'course_sub'")
+        if [ "$$EXISTS" = "1" ]; then
+          echo "[logical-init] subscription course_sub already exists"
+          exit 0
+        fi
+        psql -v ON_ERROR_STOP=1 -h postgres-logical -U admin -d course_db <<'SQL'
+        CREATE SUBSCRIPTION course_sub
+          CONNECTION 'host=postgres port=5432 dbname=course_db user=admin password=adminpass'
+          PUBLICATION course_pub
+          WITH (copy_data = true, create_slot = true, enabled = true);
+        SQL
+        echo "[logical-init] subscription created"
+
+  postgres-shard1:
+    image: postgres:16
+    container_name: pg_shard1
+    environment:
+      POSTGRES_DB: shard_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    ports:
+      - "15441:5432"
+    volumes:
+      - pg_shard1_data:/var/lib/postgresql/data
+      - ./docker/sharding/shard1:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d shard_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-shard2:
+    image: postgres:16
+    container_name: pg_shard2
+    environment:
+      POSTGRES_DB: shard_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    ports:
+      - "15442:5432"
+    volumes:
+      - pg_shard2_data:/var/lib/postgresql/data
+      - ./docker/sharding/shard2:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d shard_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  postgres-router:
+    image: postgres:16
+    container_name: pg_router_fdw
+    depends_on:
+      postgres-shard1:
+        condition: service_healthy
+      postgres-shard2:
+        condition: service_healthy
+    environment:
+      POSTGRES_DB: router_db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: adminpass
+    ports:
+      - "15440:5432"
+    volumes:
+      - pg_router_data:/var/lib/postgresql/data
+      - ./docker/sharding/router:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d router_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    profiles:
+      - tools
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pg_primary_data:
+  pg_physical_data:
+  pg_logical_data:
+  pg_shard1_data:
+  pg_shard2_data:
+  pg_router_data:
