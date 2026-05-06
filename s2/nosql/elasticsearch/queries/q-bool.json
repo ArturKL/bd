@@ -1,0 +1,14 @@
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "name": "USB" } }
+      ],
+      "filter": [
+        { "term": { "category": "accessories" } },
+        { "range": { "price": { "lte": 1000 } } }
+      ]
+    }
+  },
+  "size": 10
+}

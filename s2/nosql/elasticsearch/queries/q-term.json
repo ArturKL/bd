@@ -1,0 +1,8 @@
+{
+  "query": {
+    "term": {
+      "category": "electronics"
+    }
+  },
+  "size": 10
+}

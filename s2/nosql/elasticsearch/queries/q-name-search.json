@@ -1,0 +1,8 @@
+{
+  "query": {
+    "match_phrase": {
+      "name": "ProBook"
+    }
+  },
+  "size": 10
+}

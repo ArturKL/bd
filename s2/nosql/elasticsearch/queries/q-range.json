@@ -1,0 +1,12 @@
+{
+  "query": {
+    "range": {
+      "price": {
+        "gte": 100,
+        "lte": 50000
+      }
+    }
+  },
+  "sort": [{ "price": "asc" }],
+  "size": 10
+}

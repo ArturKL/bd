@@ -1,0 +1,15 @@
+services:
+  elasticsearch:
+    image: elasticsearch:7.17.22
+    container_name: elasticsearch-hw
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=false
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    restart: unless-stopped
