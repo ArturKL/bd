@@ -1,0 +1,24 @@
+Цель: научиться вставлять и читать данные через Line Protocol и SQL.
+
+Задачи:
+0) Настроить docker-compose
+
+1) Создать bucket mydb
+ - Через UI (http://localhost:8888) или curl
+2) Вставить несколько записей
+ - Measurement: temperature
+ - Теги: location (room1, room2)
+ - Поля: value (число)
+
+ - Пример curl:
+
+curl -X POST "http://localhost:8181/api/v3/write_lp?db=mydb" -H "Authorization: Bearer <TOKEN>" --data-raw "temperature,location=room1 value=23"
+Сделать SELECT
+
+3) Выбрать все данные за последние 5 минут:
+
+SELECT * FROM temperature IN mydb WHERE time >= now() - interval '5 minutes';
+4) Отобразить результат
+ - Через UI или curl
+
+5) Сгруппировать SELECT по тегу location (например, среднее значение по комнатам)
